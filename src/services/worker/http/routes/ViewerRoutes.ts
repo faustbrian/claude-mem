@@ -1,15 +1,11 @@
 /**
  * Viewer Routes
  *
- * Handles health check, viewer UI, and SSE stream endpoints.
- * These are used by the web viewer UI at http://localhost:37777
+ * Handles health check, minimal status page, and SSE stream endpoints.
  */
 
 import express, { Request, Response } from 'express';
-import path from 'path';
-import { readFileSync, existsSync } from 'fs';
 import { logger } from '../../../../utils/logger.js';
-import { getPackageRoot } from '../../../../shared/paths.js';
 import { SSEBroadcaster } from '../../SSEBroadcaster.js';
 import { DatabaseManager } from '../../DatabaseManager.js';
 import { SessionManager } from '../../SessionManager.js';
@@ -25,12 +21,8 @@ export class ViewerRoutes extends BaseRouteHandler {
   }
 
   setupRoutes(app: express.Application): void {
-    // Serve static UI assets (JS, CSS, fonts, etc.)
-    const packageRoot = getPackageRoot();
-    app.use(express.static(path.join(packageRoot, 'ui')));
-
     app.get('/health', this.handleHealth.bind(this));
-    app.get('/', this.handleViewerUI.bind(this));
+    app.get('/', this.handleStatusPage.bind(this));
     app.get('/stream', this.handleSSEStream.bind(this));
   }
 
@@ -42,24 +34,86 @@ export class ViewerRoutes extends BaseRouteHandler {
   });
 
   /**
-   * Serve viewer UI
+   * Minimal status page
    */
-  private handleViewerUI = this.wrapHandler((req: Request, res: Response): void => {
-    const packageRoot = getPackageRoot();
+  private handleStatusPage = this.wrapHandler((req: Request, res: Response): void => {
+    const allProjects = this.dbManager.getSessionStore().getAllProjects();
+    const isProcessing = this.sessionManager.isAnySessionProcessing();
+    const queueDepth = this.sessionManager.getTotalActiveWork();
 
-    // Try cache structure first (ui/viewer.html), then marketplace structure (plugin/ui/viewer.html)
-    const viewerPaths = [
-      path.join(packageRoot, 'ui', 'viewer.html'),
-      path.join(packageRoot, 'plugin', 'ui', 'viewer.html')
-    ];
-
-    const viewerPath = viewerPaths.find(p => existsSync(p));
-
-    if (!viewerPath) {
-      throw new Error('Viewer UI not found at any expected location');
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude-Mem Worker</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
     }
+    h1 { color: #2563eb; }
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      background: #f0f9ff;
+      border: 1px solid #bfdbfe;
+      margin: 20px 0;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .metric:last-child { border-bottom: none; }
+    .label { font-weight: 500; }
+    .value { color: #6b7280; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 8px; margin: 4px 0; background: #f9fafb; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Claude-Mem Worker</h1>
+  <p>Worker service running on port 37777</p>
 
-    const html = readFileSync(viewerPath, 'utf-8');
+  <div class="status">
+    <div class="metric">
+      <span class="label">Status:</span>
+      <span class="value">Running</span>
+    </div>
+    <div class="metric">
+      <span class="label">Processing:</span>
+      <span class="value">${isProcessing ? 'Active' : 'Idle'}</span>
+    </div>
+    <div class="metric">
+      <span class="label">Queue Depth:</span>
+      <span class="value">${queueDepth}</span>
+    </div>
+    <div class="metric">
+      <span class="label">Projects:</span>
+      <span class="value">${allProjects.length}</span>
+    </div>
+  </div>
+
+  <h2>API Endpoints</h2>
+  <ul>
+    <li><a href="/health">/health</a> - Health check</li>
+    <li><a href="/stream">/stream</a> - SSE event stream</li>
+    <li><a href="/api/sessions">/api/sessions</a> - Sessions API</li>
+    <li><a href="/api/search">/api/search</a> - Search API</li>
+  </ul>
+</body>
+</html>
+    `.trim();
+
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   });

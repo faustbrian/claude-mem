@@ -62,20 +62,6 @@ async function buildHooks() {
     fs.writeFileSync('plugin/package.json', JSON.stringify(pluginPackageJson, null, 2) + '\n');
     console.log('✓ plugin/package.json generated');
 
-    // Build React viewer
-    console.log('\n📋 Building React viewer...');
-    const { spawn } = await import('child_process');
-    const viewerBuild = spawn('node', ['scripts/build-viewer.js'], { stdio: 'inherit' });
-    await new Promise((resolve, reject) => {
-      viewerBuild.on('exit', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`Viewer build failed with exit code ${code}`));
-        }
-      });
-    });
-
     // Build worker service
     console.log(`\n🔧 Building worker service...`);
     await build({
