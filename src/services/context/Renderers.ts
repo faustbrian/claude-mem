@@ -7,6 +7,24 @@ import type {
   ObservationForDisplay,
   SessionSummary
 } from './types.js';
+import { colors } from './types.js';
+import { ModeManager } from '../domain/ModeManager.js';
+import { formatObservationTokenDisplay } from './ContextCore.js';
+
+/**
+ * Format current date/time for header display
+ */
+function formatHeaderDateTime(): string {
+  const now = new Date();
+  const date = now.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+  const time = now.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).toLowerCase().replace(' ', '');
+  const tz = now.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop();
+  return `${date} ${time} ${tz}`;
+}
 
 // ============================================================================
 // FORMATTERS

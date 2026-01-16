@@ -42,7 +42,7 @@ import {
   renderMarkdownPreviouslySection,
   renderMarkdownFooter,
   renderMarkdownEmptyState,
-} from '../../../src/services/context/formatters/MarkdownFormatter.js';
+} from '../../../src/services/context/Renderers.js';
 
 import type { Observation, TokenEconomics, ContextConfig, PriorMessages } from '../../../src/services/context/types.js';
 

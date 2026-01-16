@@ -41,7 +41,7 @@ mock.module('../../../src/services/domain/ModeManager.js', () => ({
   },
 }));
 
-import { SearchOrchestrator } from '../../../src/services/worker/search/SearchOrchestrator.js';
+import { SearchOrchestrator } from '../../../src/services/worker/search/SearchCore.js';
 import type { ObservationSearchResult, SessionSummarySearchResult, UserPromptSearchResult } from '../../../src/services/worker/search/types.js';
 
 // Mock data

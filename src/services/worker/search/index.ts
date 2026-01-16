@@ -4,18 +4,32 @@
  * This is the public API for the search module.
  */
 
-// Main orchestrator, strategies, and filters (consolidated)
+// Main orchestrator and strategies (consolidated)
 export {
   SearchOrchestrator,
   BaseSearchStrategy,
   ChromaSearchStrategy,
   SQLiteSearchStrategy,
-  HybridSearchStrategy,
-  DateFilter,
-  ProjectFilter,
-  TypeFilter
+  HybridSearchStrategy
 } from './SearchCore.js';
 export type { SearchStrategy } from './SearchCore.js';
+
+// Filter utilities
+export {
+  parseDateRange,
+  isWithinDateRange,
+  isRecent,
+  filterResultsByDate,
+  getDateBoundaries,
+  getCurrentProject,
+  normalizeProject,
+  matchesProject,
+  filterResultsByProject,
+  normalizeType,
+  matchesType,
+  filterObservationsByType,
+  parseTypeString
+} from './SearchCore.js';
 
 // Formatters
 export { ResultFormatter } from './ResultFormatter.js';
