@@ -92,7 +92,7 @@ async function buildHooks() {
       outfile: `${hooksDir}/${WORKER_SERVICE.name}.cjs`,
       minify: true,
       logLevel: 'error', // Suppress warnings (import.meta warning is benign)
-      external: ['bun:sqlite'],
+      external: ['bun:sqlite', 'cohere-ai', 'ollama'],
       define: {
         '__DEFAULT_PACKAGE_VERSION__': `"${version}"`
       },
@@ -117,7 +117,7 @@ async function buildHooks() {
       outfile: `${hooksDir}/${MCP_SERVER.name}.cjs`,
       minify: true,
       logLevel: 'error',
-      external: ['bun:sqlite'],
+      external: ['bun:sqlite', 'cohere-ai', 'ollama'],
       define: {
         '__DEFAULT_PACKAGE_VERSION__': `"${version}"`
       },
@@ -142,7 +142,7 @@ async function buildHooks() {
       outfile: `${hooksDir}/${CONTEXT_GENERATOR.name}.cjs`,
       minify: true,
       logLevel: 'error',
-      external: ['bun:sqlite'],
+      external: ['bun:sqlite', 'cohere-ai', 'ollama'],
       define: {
         '__DEFAULT_PACKAGE_VERSION__': `"${version}"`
       }

@@ -21,9 +21,11 @@ export interface SettingsDefaults {
   // System Configuration
   CLAUDE_MEM_DATA_DIR: string;
   CLAUDE_MEM_LOG_LEVEL: string;
-  CLAUDE_MEM_PYTHON_VERSION: string;
   CLAUDE_CODE_PATH: string;
   CLAUDE_MEM_MODE: string;
+  // Chroma Configuration
+  CLAUDE_MEM_CHROMA_PORT: string;
+  CLAUDE_MEM_CHROMA_HOST: string;
   // Token Economics
   CLAUDE_MEM_CONTEXT_SHOW_READ_TOKENS: string;
   CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: string;
@@ -54,9 +56,11 @@ export class SettingsDefaultsManager {
     // System Configuration
     CLAUDE_MEM_DATA_DIR: join(homedir(), '.claude-mem'),
     CLAUDE_MEM_LOG_LEVEL: 'INFO',
-    CLAUDE_MEM_PYTHON_VERSION: '3.13',
     CLAUDE_CODE_PATH: '', // Empty means auto-detect via 'which claude'
     CLAUDE_MEM_MODE: 'code', // Default mode profile
+    // Chroma Configuration
+    CLAUDE_MEM_CHROMA_PORT: '8000',
+    CLAUDE_MEM_CHROMA_HOST: '127.0.0.1',
     // Token Economics
     CLAUDE_MEM_CONTEXT_SHOW_READ_TOKENS: 'true',
     CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: 'true',
