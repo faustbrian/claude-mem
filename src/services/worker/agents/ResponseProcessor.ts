@@ -13,7 +13,6 @@
 
 import { logger } from '../../../utils/logger.js';
 import { parseObservations, parseSummary, type ParsedObservation, type ParsedSummary } from '../../../sdk/parser.js';
-import { updateCursorContextForProject } from '../../integrations/CursorHooksInstaller.js';
 import { updateFolderClaudeMdFiles } from '../../../utils/claude-md-utils.js';
 import { getWorkerPort } from '../../../shared/worker-utils.js';
 import type { ActiveSession } from '../../worker-types.js';
@@ -288,10 +287,5 @@ async function syncAndBroadcastSummary(
     project: session.project,
     prompt_number: session.lastPromptNumber,
     created_at_epoch: result.createdAtEpoch
-  });
-
-  // Update Cursor context file for registered projects (fire-and-forget)
-  updateCursorContextForProject(session.project, getWorkerPort()).catch(error => {
-    logger.warn('CURSOR', 'Context update failed (non-critical)', { project: session.project }, error as Error);
   });
 }
