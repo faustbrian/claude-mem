@@ -1,18 +1,16 @@
 /**
  * Context Module - Public API
- *
- * Re-exports the main context generation functionality.
  */
 
-export { generateContext } from './ContextBuilder.js';
-export type { ContextInput, ContextConfig } from './types.js';
-
-// Component exports for advanced usage
-export { loadContextConfig } from './ContextConfigLoader.js';
-export { calculateTokenEconomics, calculateObservationTokens } from './TokenCalculator.js';
+export { generateContext, ContextBuilder } from './ContextCore.js';
 export {
+  loadContextConfig,
+  ContextConfigLoader,
+  calculateTokenEconomics,
+  calculateObservationTokens,
   queryObservations,
   querySummaries,
   buildTimeline,
   getPriorSessionMessages,
-} from './ObservationCompiler.js';
+} from './ContextCore.js';
+export type { ContextInput, ContextConfig } from './types.js';
