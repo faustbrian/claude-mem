@@ -5,12 +5,14 @@
 import { SessionStore } from '../sqlite/SessionStore.js';
 import { logger } from '../../utils/logger.js';
 import { getProjectName } from '../../utils/project-name.js';
+import { ModeManager } from '../domain/ModeManager.js';
 import type {
   ContextSection,
   ContextConfig,
   ObservationForDisplay,
   SessionSummary
 } from './types.js';
+import { CHARS_PER_TOKEN_ESTIMATE } from './types.js';
 
 // ============================================================================
 // CORE BUILDERS

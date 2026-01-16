@@ -2,15 +2,21 @@
  * Context Module - Public API
  */
 
-export { generateContext, ContextBuilder } from './ContextCore.js';
 export {
-  loadContextConfig,
-  ContextConfigLoader,
   calculateTokenEconomics,
   calculateObservationTokens,
   queryObservations,
   querySummaries,
   buildTimeline,
   getPriorSessionMessages,
+  queryObservationsMulti,
+  querySummariesMulti,
+  extractPriorMessages,
+  prepareSummariesForTimeline,
+  getFullObservationIds,
+  getWorkEmoji,
+  formatObservationTokenDisplay,
+  shouldShowContextEconomics,
 } from './ContextCore.js';
-export type { ContextInput, ContextConfig } from './types.js';
+export * from './Renderers.js';
+export type { ContextInput, ContextConfig, ContextSection, ObservationForDisplay, TokenEconomics, PriorMessages } from './types.js';

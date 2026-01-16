@@ -146,13 +146,11 @@ describe('SettingsDefaultsManager', () => {
       it('should handle all settings keys correctly', () => {
         const fullSettings = SettingsDefaultsManager.getAllDefaults();
         fullSettings.CLAUDE_MEM_MODEL = 'all-keys-model';
-        fullSettings.CLAUDE_MEM_PROVIDER = 'gemini';
         writeFileSync(settingsPath, JSON.stringify(fullSettings));
 
         const result = SettingsDefaultsManager.loadFromFile(settingsPath);
 
         expect(result.CLAUDE_MEM_MODEL).toBe('all-keys-model');
-        expect(result.CLAUDE_MEM_PROVIDER).toBe('gemini');
       });
     });
 
@@ -295,11 +293,6 @@ describe('SettingsDefaultsManager', () => {
       expect(defaults.CLAUDE_MEM_MODEL).toBeDefined();
       expect(defaults.CLAUDE_MEM_WORKER_PORT).toBeDefined();
       expect(defaults.CLAUDE_MEM_WORKER_HOST).toBeDefined();
-
-      // Provider settings
-      expect(defaults.CLAUDE_MEM_PROVIDER).toBeDefined();
-      expect(defaults.CLAUDE_MEM_GEMINI_API_KEY).toBeDefined();
-      expect(defaults.CLAUDE_MEM_OPENROUTER_API_KEY).toBeDefined();
 
       // System settings
       expect(defaults.CLAUDE_MEM_DATA_DIR).toBeDefined();
