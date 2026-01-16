@@ -4,25 +4,23 @@
  * This is the public API for the search module.
  */
 
-// Main orchestrator
-export { SearchOrchestrator } from './SearchOrchestrator.js';
+// Main orchestrator, strategies, and filters (consolidated)
+export {
+  SearchOrchestrator,
+  BaseSearchStrategy,
+  ChromaSearchStrategy,
+  SQLiteSearchStrategy,
+  HybridSearchStrategy,
+  DateFilter,
+  ProjectFilter,
+  TypeFilter
+} from './SearchCore.js';
+export type { SearchStrategy } from './SearchCore.js';
 
 // Formatters
 export { ResultFormatter } from './ResultFormatter.js';
 export { TimelineBuilder } from './TimelineBuilder.js';
 export type { TimelineItem, TimelineData } from './TimelineBuilder.js';
-
-// Strategies
-export type { SearchStrategy } from './strategies/SearchStrategy.js';
-export { BaseSearchStrategy } from './strategies/SearchStrategy.js';
-export { ChromaSearchStrategy } from './strategies/ChromaSearchStrategy.js';
-export { SQLiteSearchStrategy } from './strategies/SQLiteSearchStrategy.js';
-export { HybridSearchStrategy } from './strategies/HybridSearchStrategy.js';
-
-// Filters
-export * from './filters/DateFilter.js';
-export * from './filters/ProjectFilter.js';
-export * from './filters/TypeFilter.js';
 
 // Types
 export * from './types.js';
