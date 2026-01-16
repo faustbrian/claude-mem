@@ -1,18 +1,16 @@
 /**
  * BunRouter - Handles application routes for Bun server
  *
- * Simplified router that handles core endpoints
+ * API-only router for Claude Code plugin
  */
 
 import { logger } from '../../utils/logger.js';
-import type { BunSSEBroadcaster } from '../worker/BunSSEBroadcaster.js';
 import type { DatabaseManager } from '../worker/DatabaseManager.js';
 import type { SessionManager } from '../worker/SessionManager.js';
 import type { SDKAgent } from '../worker/SDKAgent.js';
 
 export class BunRouter {
   constructor(
-    private sseBroadcaster: BunSSEBroadcaster,
     private dbManager: DatabaseManager,
     private sessionManager: SessionManager,
     private sdkAgent: SDKAgent
@@ -25,21 +23,6 @@ export class BunRouter {
     const url = new URL(req.url);
     const pathname = url.pathname;
     const method = req.method;
-
-    // Root - serve viewer UI
-    if (pathname === '/') {
-      return this.serveViewerUI();
-    }
-
-    // Health endpoint
-    if (pathname === '/health') {
-      return Response.json({ status: 'ok', timestamp: Date.now() });
-    }
-
-    // SSE stream endpoint
-    if (pathname === '/stream') {
-      return this.handleSSEStream();
-    }
 
     // Session routes
     if (pathname.startsWith('/api/sessions')) {
@@ -68,62 +51,6 @@ export class BunRouter {
 
     // 404 - Not Found
     return Response.json({ error: 'Not Found' }, { status: 404 });
-  }
-
-  /**
-   * Serve viewer UI HTML
-   */
-  private serveViewerUI(): Response {
-    // For now, return minimal HTML
-    const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Claude-Mem Worker</title>
-</head>
-<body>
-  <h1>Claude-Mem Worker Running</h1>
-  <p>API: <a href="/api/health">/api/health</a></p>
-  <p>Stream: <a href="/stream">/stream</a></p>
-</body>
-</html>
-    `;
-    return new Response(html, {
-      headers: { 'Content-Type': 'text/html' }
-    });
-  }
-
-  /**
-   * Handle SSE stream
-   */
-  private handleSSEStream(): Response {
-    const stream = this.sseBroadcaster.createStream();
-
-    // Send initial load event after stream is created
-    setTimeout(() => {
-      const allProjects = this.dbManager.getSessionStore().getAllProjects();
-      this.sseBroadcaster.broadcast({
-        type: 'initial_load',
-        projects: allProjects,
-        timestamp: Date.now()
-      });
-
-      const isProcessing = this.sessionManager.isAnySessionProcessing();
-      const queueDepth = this.sessionManager.getTotalActiveWork();
-      this.sseBroadcaster.broadcast({
-        type: 'processing_status',
-        isProcessing,
-        queueDepth
-      });
-    }, 10);
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
   }
 
   /**

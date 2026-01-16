@@ -44,14 +44,12 @@ import { BunRouter } from './server/BunRouter.js';
 // Service layer imports
 import { DatabaseManager } from './worker/DatabaseManager.js';
 import { SessionManager } from './worker/SessionManager.js';
-import { BunSSEBroadcaster } from './worker/BunSSEBroadcaster.js';
 import { SDKAgent } from './worker/SDKAgent.js';
 import { PaginationHelper } from './worker/PaginationHelper.js';
 import { SettingsManager } from './worker/SettingsManager.js';
 import { SearchManager } from './worker/SearchManager.js';
 import { FormattingService } from './worker/FormattingService.js';
 import { TimelineService } from './worker/TimelineService.js';
-import { SessionEventBroadcaster } from './worker/events/SessionEventBroadcaster.js';
 
 /**
  * Build JSON status output for hook framework communication.
@@ -91,11 +89,9 @@ export class WorkerService {
   // Service layer
   private dbManager: DatabaseManager;
   private sessionManager: SessionManager;
-  private sseBroadcaster: BunSSEBroadcaster;
   private sdkAgent: SDKAgent;
   private paginationHelper: PaginationHelper;
   private settingsManager: SettingsManager;
-  private sessionEventBroadcaster: SessionEventBroadcaster;
 
   // Search manager (initialized during background startup)
   private searchManager: SearchManager | null = null;
@@ -113,17 +109,10 @@ export class WorkerService {
     // Initialize service layer
     this.dbManager = new DatabaseManager();
     this.sessionManager = new SessionManager(this.dbManager);
-    this.sseBroadcaster = new BunSSEBroadcaster();
     this.sdkAgent = new SDKAgent(this.dbManager, this.sessionManager);
 
     this.paginationHelper = new PaginationHelper(this.dbManager);
     this.settingsManager = new SettingsManager(this.dbManager);
-    this.sessionEventBroadcaster = new SessionEventBroadcaster(this.sseBroadcaster, this);
-
-    // Set callback for when sessions are deleted
-    this.sessionManager.setOnSessionDeleted(() => {
-      this.broadcastProcessingStatus();
-    });
 
     // Initialize MCP client
     // Empty capabilities object: this client only calls tools, doesn't expose any
@@ -134,7 +123,6 @@ export class WorkerService {
 
     // Initialize router with dependencies
     this.router = new BunRouter(
-      this.sseBroadcaster,
       this.dbManager,
       this.sessionManager,
       this.sdkAgent
@@ -289,7 +277,6 @@ export class WorkerService {
       })
       .finally(() => {
         session.generatorPromise = null;
-        this.broadcastProcessingStatus();
       });
   }
 
@@ -359,26 +346,6 @@ export class WorkerService {
     });
   }
 
-  /**
-   * Broadcast processing status change to SSE clients
-   */
-  broadcastProcessingStatus(): void {
-    const isProcessing = this.sessionManager.isAnySessionProcessing();
-    const queueDepth = this.sessionManager.getTotalActiveWork();
-    const activeSessions = this.sessionManager.getActiveSessionCount();
-
-    logger.info('WORKER', 'Broadcasting processing status', {
-      isProcessing,
-      queueDepth,
-      activeSessions
-    });
-
-    this.sseBroadcaster.broadcast({
-      type: 'processing_status',
-      isProcessing,
-      queueDepth
-    });
-  }
 }
 
 // ============================================================================

@@ -65,7 +65,6 @@
     "ansi-to-html": "^0.7.2",
     "chromadb": "^1.10.5",
     "glob": "^11.0.3",
-    "handlebars": "^4.7.8",
     "yaml": "^2.8.2",
     "zod-to-json-schema": "^3.24.6"
   },
