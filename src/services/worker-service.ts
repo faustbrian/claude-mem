@@ -38,12 +38,13 @@ import {
 import { performGracefulShutdown } from './infrastructure/GracefulShutdown.js';
 
 // Server imports
-import { Server } from './server/Server.js';
+import { BunServer } from './server/BunServer.js';
+import { BunRouter } from './server/BunRouter.js';
 
 // Service layer imports
 import { DatabaseManager } from './worker/DatabaseManager.js';
 import { SessionManager } from './worker/SessionManager.js';
-import { SSEBroadcaster } from './worker/SSEBroadcaster.js';
+import { BunSSEBroadcaster } from './worker/BunSSEBroadcaster.js';
 import { SDKAgent } from './worker/SDKAgent.js';
 import { PaginationHelper } from './worker/PaginationHelper.js';
 import { SettingsManager } from './worker/SettingsManager.js';
@@ -51,14 +52,6 @@ import { SearchManager } from './worker/SearchManager.js';
 import { FormattingService } from './worker/FormattingService.js';
 import { TimelineService } from './worker/TimelineService.js';
 import { SessionEventBroadcaster } from './worker/events/SessionEventBroadcaster.js';
-
-// HTTP route handlers
-import { ViewerRoutes } from './worker/http/routes/ViewerRoutes.js';
-import { SessionRoutes } from './worker/http/routes/SessionRoutes.js';
-import { DataRoutes } from './worker/http/routes/DataRoutes.js';
-import { SearchRoutes } from './worker/http/routes/SearchRoutes.js';
-import { SettingsRoutes } from './worker/http/routes/SettingsRoutes.js';
-import { LogsRoutes } from './worker/http/routes/LogsRoutes.js';
 
 /**
  * Build JSON status output for hook framework communication.
@@ -85,7 +78,8 @@ export function buildStatusOutput(status: 'ready' | 'error', message?: string): 
 }
 
 export class WorkerService {
-  private server: Server;
+  private server: BunServer;
+  private router: BunRouter;
   private startTime: number = Date.now();
   private mcpClient: Client;
 
@@ -97,14 +91,14 @@ export class WorkerService {
   // Service layer
   private dbManager: DatabaseManager;
   private sessionManager: SessionManager;
-  private sseBroadcaster: SSEBroadcaster;
+  private sseBroadcaster: BunSSEBroadcaster;
   private sdkAgent: SDKAgent;
   private paginationHelper: PaginationHelper;
   private settingsManager: SettingsManager;
   private sessionEventBroadcaster: SessionEventBroadcaster;
 
-  // Route handlers
-  private searchRoutes: SearchRoutes | null = null;
+  // Search manager (initialized during background startup)
+  private searchManager: SearchManager | null = null;
 
   // Initialization tracking
   private initializationComplete: Promise<void>;
@@ -119,7 +113,7 @@ export class WorkerService {
     // Initialize service layer
     this.dbManager = new DatabaseManager();
     this.sessionManager = new SessionManager(this.dbManager);
-    this.sseBroadcaster = new SSEBroadcaster();
+    this.sseBroadcaster = new BunSSEBroadcaster();
     this.sdkAgent = new SDKAgent(this.dbManager, this.sessionManager);
 
     this.paginationHelper = new PaginationHelper(this.dbManager);
@@ -138,16 +132,22 @@ export class WorkerService {
       version: packageVersion
     }, { capabilities: {} });
 
-    // Initialize HTTP server with core routes
-    this.server = new Server({
+    // Initialize router with dependencies
+    this.router = new BunRouter(
+      this.sseBroadcaster,
+      this.dbManager,
+      this.sessionManager,
+      this.sdkAgent
+    );
+
+    // Initialize HTTP server
+    this.server = new BunServer({
       getInitializationComplete: () => this.initializationCompleteFlag,
       getMcpReady: () => this.mcpReady,
       onShutdown: () => this.shutdown(),
-      onRestart: () => this.shutdown()
+      onRestart: () => this.shutdown(),
+      getRouteHandler: () => (req: Request) => this.router.handle(req)
     });
-
-    // Register route handlers
-    this.registerRoutes();
 
     // Register signal handlers early to ensure cleanup even if start() hasn't completed
     this.registerSignalHandlers();
@@ -170,34 +170,6 @@ export class WorkerService {
     });
   }
 
-  /**
-   * Register all route handlers with the server
-   */
-  private registerRoutes(): void {
-    // Standard routes
-    this.server.registerRoutes(new ViewerRoutes(this.sseBroadcaster, this.dbManager, this.sessionManager));
-    this.server.registerRoutes(new SessionRoutes(this.sessionManager, this.dbManager, this.sdkAgent, this.sessionEventBroadcaster, this));
-    this.server.registerRoutes(new DataRoutes(this.paginationHelper, this.dbManager, this.sessionManager, this.sseBroadcaster, this, this.startTime));
-    this.server.registerRoutes(new SettingsRoutes(this.settingsManager));
-    this.server.registerRoutes(new LogsRoutes());
-
-    // Early handler for /api/context/inject to avoid 404 during startup
-    this.server.app.get('/api/context/inject', async (req, res, next) => {
-      const timeoutMs = 300000; // 5 minute timeout for slow systems
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Initialization timeout')), timeoutMs)
-      );
-
-      await Promise.race([this.initializationComplete, timeoutPromise]);
-
-      if (!this.searchRoutes) {
-        res.status(503).json({ error: 'Search routes not initialized' });
-        return;
-      }
-
-      next(); // Delegate to SearchRoutes handler
-    });
-  }
 
   /**
    * Start the worker service
@@ -247,16 +219,14 @@ export class WorkerService {
       // Initialize search services
       const formattingService = new FormattingService();
       const timelineService = new TimelineService();
-      const searchManager = new SearchManager(
+      this.searchManager = new SearchManager(
         this.dbManager.getSessionSearch(),
         this.dbManager.getSessionStore(),
         this.dbManager.getChromaSync(),
         formattingService,
         timelineService
       );
-      this.searchRoutes = new SearchRoutes(searchManager);
-      this.server.registerRoutes(this.searchRoutes);
-      logger.info('WORKER', 'SearchManager initialized and search routes registered');
+      logger.info('WORKER', 'SearchManager initialized');
 
       // Connect to MCP server
       const mcpServerPath = path.join(__dirname, 'mcp-server.cjs');
