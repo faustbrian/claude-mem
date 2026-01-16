@@ -22,11 +22,6 @@ const MCP_SERVER = {
   source: 'src/servers/mcp-server.ts'
 };
 
-const CONTEXT_GENERATOR = {
-  name: 'context-generator',
-  source: 'src/services/context-generator.ts'
-};
-
 async function buildHooks() {
   console.log('🔨 Building claude-mem hooks and worker service...\n');
 
@@ -131,31 +126,10 @@ async function buildHooks() {
     const mcpServerStats = fs.statSync(`${hooksDir}/${MCP_SERVER.name}.cjs`);
     console.log(`✓ mcp-server built (${(mcpServerStats.size / 1024).toFixed(2)} KB)`);
 
-    // Build context generator
-    console.log(`\n🔧 Building context generator...`);
-    await build({
-      entryPoints: [CONTEXT_GENERATOR.source],
-      bundle: true,
-      platform: 'node',
-      target: 'node18',
-      format: 'cjs',
-      outfile: `${hooksDir}/${CONTEXT_GENERATOR.name}.cjs`,
-      minify: true,
-      logLevel: 'error',
-      external: ['bun:sqlite', 'cohere-ai', 'ollama'],
-      define: {
-        '__DEFAULT_PACKAGE_VERSION__': `"${version}"`
-      }
-    });
-
-    const contextGenStats = fs.statSync(`${hooksDir}/${CONTEXT_GENERATOR.name}.cjs`);
-    console.log(`✓ context-generator built (${(contextGenStats.size / 1024).toFixed(2)} KB)`);
-
-    console.log('\n✅ Worker service, MCP server, and context generator built successfully!');
+    console.log('\n✅ Worker service and MCP server built successfully!');
     console.log(`   Output: ${hooksDir}/`);
     console.log(`   - Worker: worker-service.cjs`);
     console.log(`   - MCP Server: mcp-server.cjs`);
-    console.log(`   - Context Generator: context-generator.cjs`);
 
   } catch (error) {
     console.error('\n❌ Build failed:', error.message);
